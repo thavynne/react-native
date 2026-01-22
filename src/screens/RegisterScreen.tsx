@@ -7,17 +7,39 @@ export default function RegisterScreen() {
   const [idade, setIdade] = useState("")
   const [phone, setPhone] = useState("")
 
-  function handleSave() {
-    console.log('Nome:', name)
-    console.log('Email:', email)
-    console.log('Idade:', idade)
-    console.log('Telefone:', phone)
+  function isValidEmail(email: string) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+    }
 
+    function isValidPhone(phone: string) {
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      return phoneRegex.test(phone)
+    }
+
+  function handleSave() {
+    
     if (name === "" || email === "" || idade === "" || phone === "") {
       Alert.alert('Erro', 'Por favor, preencha todos os campos.')
       return
     }
+
+    if (!isValidEmail(email)) {
+      Alert.alert('Erro', 'Por favor, insira um email válido.')
+      return
+    }
+
+    if (!isValidPhone(phone)) {
+      Alert.alert('Erro', 'Por favor, insira um telefone válido.')
+      return
+    }
+
     Alert.alert('Sucesso', 'Cadastro realizado com sucesso!')
+
+    console.log('Nome:', name)
+    console.log('Email:', email)
+    console.log('Idade:', idade)
+    console.log('Telefone:', phone)
 
     //Futuramente entra CRUD aqui
 
