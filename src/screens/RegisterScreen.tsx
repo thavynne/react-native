@@ -1,22 +1,34 @@
 import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native"
 import { useState } from "react"
 
-export default function ResgisterScreen() {
+export default function RegisterScreen() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [idade, setIdade] = useState("")
+  const [phone, setPhone] = useState("")
 
   function handleSave() {
     console.log('Nome:', name)
     console.log('Email:', email)
     console.log('Idade:', idade)
+    console.log('Telefone:', phone)
 
+    if (name === "" || email === "" || idade === "" || phone === "") {
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.')
+      return
+    }
     Alert.alert('Sucesso', 'Cadastro realizado com sucesso!')
+
+    //Futuramente entra CRUD aqui
+
+
+
 
     //Limpa o formulário
     setName("")
     setEmail("")
     setIdade("")
+    setPhone("")
   }
 
     return (
@@ -26,6 +38,7 @@ export default function ResgisterScreen() {
         <TextInput
             style={styles.input}
             placeholder="Nome"
+            placeholderTextColor={"#aaa"}
             value={name}
             onChangeText={setName}
         />
@@ -33,6 +46,7 @@ export default function ResgisterScreen() {
         <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor={"#aaa"}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -41,12 +55,33 @@ export default function ResgisterScreen() {
         <TextInput
             style={styles.input}
             placeholder="Idade"
+            placeholderTextColor={"#aaa"}
             value={idade}
             onChangeText={setIdade}
             keyboardType="numeric"
         />
 
-        <Button title="Salvar" onPress={handleSave} />
+        <TextInput
+            style={styles.input}
+            placeholder="Telefone"
+            placeholderTextColor={"#aaa"}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+        />
+
+        <View style={styles.buttonContainer}>
+            <Button title="Salvar" onPress={handleSave} />
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <Button title="Cancelar" onPress={() => {
+            setName("")
+            setEmail("")
+            setIdade("")
+            setPhone("")
+          }} />
+        </View>
     </View>
 );
 }
@@ -62,12 +97,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
+    color: "#fff",
     },
     input: {
     height: 40,
     borderColor: "gray",
     borderWidth: 1,
+    borderRadius: 5,
     marginBottom: 15,
     paddingHorizontal: 10,
+    color: "#fff",
+    },
+    buttonContainer: {
+    marginTop: 15,
+    paddingHorizontal: 50,
     },
 });
