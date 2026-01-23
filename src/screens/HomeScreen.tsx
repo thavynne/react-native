@@ -32,6 +32,12 @@ export default function HomeScreen({ navigation }: Props) {
         title='Ir para Cadastro'
         onPress={() => navigation.navigate('Register')}
         />
+      
+      <View style={{ marginTop: 10 }} />
+      <Button
+        title='Ver Lista de Usuários'
+        onPress={() => navigation.navigate('List')}
+      />
     </View>
   );
 }
