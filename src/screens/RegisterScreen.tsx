@@ -3,9 +3,16 @@ import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity,
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type RegisterNavProp = NativeStackNavigationProp<
+  RootStackParamList, 
+  'Register'
+>;
 
 export default function RegisterScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RegisterNavProp>();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
