@@ -22,22 +22,23 @@ export default function HomeScreen({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Bem-vindo ao Meu Primeiro App!</Text>
       <Button
-        title="Ir para Detalhes"
-        onPress={() => navigation.navigate('Details')}
+        title="Login"
+        onPress={() => navigation.navigate('Login')}
       />
 
       <View style={{ marginTop: 10 }} />
 
       <Button
-        title='Ir para Cadastro'
+        title='Cadastro'
         onPress={() => navigation.navigate('Register')}
         />
       
       <View style={{ marginTop: 10 }} />
       <Button
-        title='Ver Lista de Usuários'
+        title='Lista de Usuários'
         onPress={() => navigation.navigate('List')}
       />
+
     </View>
   );
 }
