@@ -1,4 +1,4 @@
-// Página de login (Ao realizar autenticação com firebase, deve ser redirecionado para DetailsScreen)
+// Página de login (Ao realizar autenticação com firebase, será redirecionado automaticamente)
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -19,9 +19,9 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       console.log('Usuário logado:', userCredential.user.email);
-
-      // Redireciona para a tela de detalhes após login bem-sucedido
-      navigation.replace('Details');
+      // Não preciso fazer navegação manual - o AppNavigator vai detectar a mudança de estado
+      setEmail('');
+      setSenha('');
     } catch (error: any) {
       console.error('Erro ao fazer login:', error);
       let mensagemErro = 'Erro ao fazer login';
@@ -49,9 +49,10 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tela de Login</Text>
+      <Text style={styles.title}>Login</Text>
 
       <View style={styles.form}>
         <TextInput
@@ -71,6 +72,12 @@ export default function LoginScreen({ navigation }: any) {
           style={styles.input}
         />
 
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+          <Text style={styles.forgotPassword}>
+            Esqueci minha senha
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
@@ -80,6 +87,13 @@ export default function LoginScreen({ navigation }: any) {
             {loading ? 'Entrando...' : 'Entrar'}
           </Text>
         </TouchableOpacity>
+
+        <View style={styles.signupContainer}>
+          <Text style={styles.signupText}>Não tem conta? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.signupLink}>Cadastre-se</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -116,10 +130,12 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#4CAF50',
-    padding: 15,
+    padding: 10,
     alignItems: 'center',
     borderRadius: 8,
     marginTop: 10,
+    width: '80%',
+    alignSelf: 'center',
   },
   buttonDisabled: {
     backgroundColor: '#a5d6a7',
@@ -129,4 +145,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  forgotPassword: {
+    color: '#1e90ff',
+    fontSize: 13,
+    marginTop: 12,
+    marginBottom: 20,
+    textAlign: 'right',
+  },
+  signupContainer: {
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signupText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  signupLink: {
+    color: '#ff6b35',
+    fontSize: 14,
+    fontWeight: '600',
+  }
 });

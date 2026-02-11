@@ -4,10 +4,10 @@ import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
+import { AuthStackParamList } from '../navigation/AuthStack';
 
 type RegisterNavProp = NativeStackNavigationProp<
-  RootStackParamList, 
+  AuthStackParamList, 
   'Register'
 >;
 
@@ -16,11 +16,13 @@ export default function RegisterScreen() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [senha, setSenha] = useState('');
   const [salvando, setSalvando] = useState(false);
 
   const [nomeError, setNomeError] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [telefoneError, setTelefoneError] = useState(false);
+  const [senhaError, setSenhaError] = useState(false);
 
   const validarEmail = (email: string) => {
     const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +36,10 @@ export default function RegisterScreen() {
 
   const validarNome = (nome: string) => {
     return nome.trim().length >= 3;
+  };
+
+  const validarSenha = (senha: string) => {
+    return senha.length >= 6;
   };
 
   const validarFormulario = () => {
@@ -58,6 +64,14 @@ export default function RegisterScreen() {
       temErro = true;
     } else {
       setTelefoneError(false);
+      
+    }
+
+    if (!validarSenha(senha)) {
+      setSenhaError(true);
+      temErro = true;
+    } else {
+      setSenhaError(false);
     }
 
     return !temErro;
@@ -76,6 +90,7 @@ export default function RegisterScreen() {
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
         telefone: telefone,
+        senha: senha,
         criadoEm: Timestamp.now(),
         data: new Date().toLocaleDateString('pt-BR'),
       };
@@ -91,11 +106,13 @@ export default function RegisterScreen() {
           onPress: () => {
             setNome('');
             setEmail('');
+            setSenha('');
             setTelefone('');
             setNomeError(false);
             setEmailError(false);
             setTelefoneError(false);
-            navigation.navigate('List');
+            setSenhaError(false);
+            navigation.goBack();
           }
         }
       ]);
@@ -199,6 +216,32 @@ export default function RegisterScreen() {
         {telefoneError ? <Text style={styles.textoErro}>Telefone deve conter 11 dígitos</Text> : null}
       </View>
 
+      <View style={styles.fieldContainer}>
+        <Text style={styles.label}>Senha</Text>
+        {senhaError ? <TextInput
+          style={senhaError ? styles.inputError : styles.input}
+          placeholder="Digite sua senha"
+          placeholderTextColor="#999"
+          secureTextEntry={true}
+          value={senha}
+          onChangeText={(texto) => {
+            setSenha(texto);
+            setSenhaError(false);
+          }}
+        /> : <TextInput
+          style={styles.input}
+          placeholder="Digite sua senha"
+          placeholderTextColor="#999"
+          secureTextEntry={true}
+          value={senha}
+          onChangeText={(texto) => {
+            setSenha(texto);
+            setSenhaError(false);
+          }}
+        />}
+        {senhaError ? <Text style={styles.textoErro}>Senha deve ter no mínimo 6 caracteres</Text> : null}
+      </View>
+
       <View style={styles.botoesContainer}>
         <TouchableOpacity 
           style={[styles.botaoSalvar, salvando && styles.botaoDesabilitado]}
@@ -210,20 +253,6 @@ export default function RegisterScreen() {
           ) : (
             <Text style={styles.botaoTexto}>SALVAR</Text>
           )}
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.botaoLista}
-          onPress={() => navigation.navigate('List')}
-        >
-          <Text style={styles.botaoTexto}>VER CADASTRADOS</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.botaoVoltar}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.botaoTexto}>VOLTAR</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -288,20 +317,6 @@ const styles = StyleSheet.create({
   },
   botaoDesabilitado: {
     opacity: 0.6,
-  },
-  botaoLista: {
-    backgroundColor: '#2196F3',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  botaoVoltar: {
-    backgroundColor: '#757575',
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 12,
-    alignItems: 'center',
   },
   botaoTexto: {
     color: '#fff',
