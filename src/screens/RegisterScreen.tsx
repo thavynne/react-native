@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Alert, TouchableOpacity, ActivityIndicator, } from 'react-native';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import { doc, setDoc, Timestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../config/firebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../navigation/AuthStack';
 
 type RegisterNavProp = NativeStackNavigationProp<
-  AuthStackParamList, 
+  AuthStackParamList,
   'Register'
 >;
 
 export default function RegisterScreen() {
   const navigation = useNavigation<RegisterNavProp>();
+
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -24,237 +35,157 @@ export default function RegisterScreen() {
   const [telefoneError, setTelefoneError] = useState(false);
   const [senhaError, setSenhaError] = useState(false);
 
-  const validarEmail = (email: string) => {
-    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regexEmail.test(email);
-  };
+  const validarEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const validarTelefone = (telefone: string) => {
-    const apenasNumeros = telefone.replace(/\D/g, '');
-    return apenasNumeros.length === 11;
-  };
-
-  const validarNome = (nome: string) => {
-    return nome.trim().length >= 3;
-  };
-
-  const validarSenha = (senha: string) => {
-    return senha.length >= 6;
-  };
+  const validarTelefone = (telefone: string) =>
+    telefone.replace(/\D/g, '').length === 11;
 
   const validarFormulario = () => {
-    let temErro = false;
+    let erro = false;
 
-    if (!validarNome(nome)) {
-      setNomeError(true);
-      temErro = true;
-    } else {
-      setNomeError(false);
+    setNomeError(!nome || nome.trim().length < 3);
+    setEmailError(!validarEmail(email));
+    setTelefoneError(!validarTelefone(telefone));
+    setSenhaError(senha.length < 6);
+
+    if (
+      nome.trim().length < 3 ||
+      !validarEmail(email) ||
+      !validarTelefone(telefone) ||
+      senha.length < 6
+    ) {
+      erro = true;
     }
 
-    if (!validarEmail(email)) {
-      setEmailError(true);
-      temErro = true;
-    } else {
-      setEmailError(false);
-    }
+    return !erro;
+  };
 
-    if (!validarTelefone(telefone)) {
-      setTelefoneError(true);
-      temErro = true;
-    } else {
-      setTelefoneError(false);
-      
-    }
+  const formatarTelefone = (texto: string) => {
+    const n = texto.replace(/\D/g, '');
 
-    if (!validarSenha(senha)) {
-      setSenhaError(true);
-      temErro = true;
-    } else {
-      setSenhaError(false);
-    }
-
-    return !temErro;
+    if (n.length <= 2) return `(${n}`;
+    if (n.length <= 7) return `(${n.slice(0, 2)}) ${n.slice(2)}`;
+    return `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7, 11)}`;
   };
 
   const salvarDados = async () => {
     if (!validarFormulario()) {
-      Alert.alert('Erro', 'Por favor, corrija os erros no formulário');
+      Alert.alert('Erro', 'Corrija os erros do formulário.');
       return;
     }
 
     setSalvando(true);
 
     try {
-      const novoUsuario = {
+      const credencial = await createUserWithEmailAndPassword(
+        auth,
+        email.trim().toLowerCase(),
+        senha
+      );
+
+      const uid = credencial.user.uid;
+
+      await setDoc(doc(db, 'usuarios', uid), {
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
-        telefone: telefone,
-        senha: senha,
+        telefone,
         criadoEm: Timestamp.now(),
-        data: new Date().toLocaleDateString('pt-BR'),
-      };
-
-      // Adiciona o documento na coleção 'usuarios' do Firestore
-      const docRef = await addDoc(collection(db, 'usuarios'), novoUsuario);
-      
-      console.log('Usuário cadastrado com ID:', docRef.id);
+      });
 
       Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
         {
           text: 'OK',
-          onPress: () => {
-            setNome('');
-            setEmail('');
-            setSenha('');
-            setTelefone('');
-            setNomeError(false);
-            setEmailError(false);
-            setTelefoneError(false);
-            setSenhaError(false);
-            navigation.goBack();
-          }
-        }
+          onPress: () => navigation.goBack(),
+        },
       ]);
-
-    } catch (erro) {
-      console.error('Erro ao salvar no Firebase:', erro);
+    } catch (error: any) {
       Alert.alert(
-        'Erro', 
-        'Não foi possível salvar os dados. Verifique sua conexão e as configurações do Firebase.'
+        'Erro',
+        error.code === 'auth/email-already-in-use'
+          ? 'Este email já está cadastrado.'
+          : 'Erro ao realizar cadastro.'
       );
     } finally {
       setSalvando(false);
     }
   };
 
-  const formatarTelefone = (texto: string) => {
-    const apenasNumeros = texto.replace(/\D/g, '');
-    
-    if (apenasNumeros.length === 0) return '';
-    if (apenasNumeros.length <= 2) return `(${apenasNumeros}`;
-    if (apenasNumeros.length <= 7) {
-      return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
-    }
-    
-    return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2, 7)}-${apenasNumeros.slice(7, 11)}`;
-  };
-
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.titulo}>Cadastro de Usuários</Text>
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Nome</Text>
-        {nomeError ? <TextInput
-          style={styles.inputError}
-          placeholder="Digite seu nome completo"
-          placeholderTextColor="#999"
-          value={nome}
-          onChangeText={(texto) => {
-            setNome(texto);
-            setNomeError(false);
-          }}
-        /> : <TextInput
-          style={styles.input}
-          placeholder="Digite seu nome completo"
-          placeholderTextColor="#999"
-          value={nome}
-          onChangeText={(texto) => {
-            setNome(texto);
-            setNomeError(false);
-          }}
-        />}
-        {nomeError ? <Text style={styles.textoErro}>Nome deve ter no mínimo 3 caracteres</Text> : null}
-      </View>
+      {/* NOME */}
+      <Text style={styles.label}>Nome</Text>
+      <TextInput
+        style={nomeError ? styles.inputError : styles.input}
+        placeholder="Nome completo"
+        value={nome}
+        onChangeText={(t) => {
+          setNome(t);
+          setNomeError(false);
+        }}
+      />
+      {nomeError && <Text style={styles.textoErro}>Mínimo 3 caracteres</Text>}
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Email</Text>
-        {emailError ? <TextInput
-          style={styles.inputError}
-          placeholder="Digite seu email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={(texto) => {
-            setEmail(texto);
-            setEmailError(false);
-          }}
-        /> : <TextInput
-          style={styles.input}
-          placeholder="Digite seu email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={(texto) => {
-            setEmail(texto);
-            setEmailError(false);
-          }}
-        />}
-        {emailError ? <Text style={styles.textoErro}>Email inválido</Text> : null}
-      </View>
+      {/* EMAIL */}
+      <Text style={styles.label}>Email</Text>
+      <TextInput
+        style={emailError ? styles.inputError : styles.input}
+        placeholder="Email"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={(t) => {
+          setEmail(t);
+          setEmailError(false);
+        }}
+      />
+      {emailError && <Text style={styles.textoErro}>Email inválido</Text>}
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Telefone</Text>
-        {telefoneError ? <TextInput
-          style={styles.inputError}
-          placeholder="(XX) XXXXX-XXXX"
-          placeholderTextColor="#999"
-          value={telefone}
-          onChangeText={(texto) => {
-            setTelefone(formatarTelefone(texto));
-            setTelefoneError(false);
-          }}
-        /> : <TextInput
-          style={styles.input}
-          placeholder="(XX) XXXXX-XXXX"
-          placeholderTextColor="#999"
-          value={telefone}
-          onChangeText={(texto) => {
-            setTelefone(formatarTelefone(texto));
-            setTelefoneError(false);
-          }}
-        />}
-        {telefoneError ? <Text style={styles.textoErro}>Telefone deve conter 11 dígitos</Text> : null}
-      </View>
+      {/* TELEFONE */}
+      <Text style={styles.label}>Telefone</Text>
+      <TextInput
+        style={telefoneError ? styles.inputError : styles.input}
+        placeholder="(XX) XXXXX-XXXX"
+        keyboardType="phone-pad"
+        value={telefone}
+        onChangeText={(t) => {
+          setTelefone(formatarTelefone(t));
+          setTelefoneError(false);
+        }}
+      />
+      {telefoneError && (
+        <Text style={styles.textoErro}>Telefone com 11 dígitos</Text>
+      )}
 
-      <View style={styles.fieldContainer}>
-        <Text style={styles.label}>Senha</Text>
-        {senhaError ? <TextInput
-          style={senhaError ? styles.inputError : styles.input}
-          placeholder="Digite sua senha"
-          placeholderTextColor="#999"
-          secureTextEntry={true}
-          value={senha}
-          onChangeText={(texto) => {
-            setSenha(texto);
-            setSenhaError(false);
-          }}
-        /> : <TextInput
-          style={styles.input}
-          placeholder="Digite sua senha"
-          placeholderTextColor="#999"
-          secureTextEntry={true}
-          value={senha}
-          onChangeText={(texto) => {
-            setSenha(texto);
-            setSenhaError(false);
-          }}
-        />}
-        {senhaError ? <Text style={styles.textoErro}>Senha deve ter no mínimo 6 caracteres</Text> : null}
-      </View>
+      {/* SENHA */}
+      <Text style={styles.label}>Senha</Text>
+      <TextInput
+        style={senhaError ? styles.inputError : styles.input}
+        placeholder="Senha"
+        secureTextEntry
+        value={senha}
+        onChangeText={(t) => {
+          setSenha(t);
+          setSenhaError(false);
+        }}
+      />
+      {senhaError && (
+        <Text style={styles.textoErro}>Mínimo 6 caracteres</Text>
+      )}
 
-      <View style={styles.botoesContainer}>
-        <TouchableOpacity 
-          style={[styles.botaoSalvar, salvando && styles.botaoDesabilitado]}
-          onPress={salvarDados}
-          disabled={salvando}
-        >
-          {salvando ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.botaoTexto}>SALVAR</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={[styles.botaoSalvar, salvando && styles.botaoDesabilitado]}
+        onPress={salvarDados}
+        disabled={salvando}
+      >
+        {salvando ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.botaoTexto}>SALVAR</Text>
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -268,51 +199,38 @@ const styles = StyleSheet.create({
   titulo: {
     fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#333',
+    marginBottom: 24,
     textAlign: 'center',
   },
-  fieldContainer: {
-    marginBottom: 20,
-  },
   label: {
-    fontSize: 16,
+    marginTop: 12,
+    marginBottom: 6,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
   },
   input: {
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    padding: 12,
   },
   inputError: {
+    backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#f44336',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    padding: 12,
   },
   textoErro: {
     color: '#f44336',
     fontSize: 12,
-    marginTop: 5,
-  },
-  botoesContainer: {
-    marginTop: 30,
-    marginBottom: 40,
+    marginTop: 4,
   },
   botaoSalvar: {
     backgroundColor: '#4CAF50',
-    borderRadius: 8,
+    marginTop: 30,
     padding: 14,
-    marginBottom: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
   botaoDesabilitado: {

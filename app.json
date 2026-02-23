@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Taskly",
-    "slug": "Taskly",
+    "name": "MeuPrimeiroApp",
+    "slug": "MeuPrimeiroApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "taskly",
+    "scheme": "meuprimeiroapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
 
